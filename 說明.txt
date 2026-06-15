@@ -1,0 +1,88 @@
+================================================================
+  YOLOv10s Attention Mechanism 實驗
+================================================================
+
+【實驗主題】
+在 YOLOv10s 上比較多種 attention 機制對電力線零件偵測（Furnas Dataset）的效果
+共測試 11 種模型架構，包括 Baseline、CBAM、CoordAtt、ECA、C3TR-lite（多種變體）及組合方法
+
+
+================================================================
+  重要文件
+================================================================
+
+1. EXPERIMENT_NOTES.md
+   最完整的實驗紀錄，包含：
+      - 資料集說明（類別分布、train/val/test 分割方式）
+      - 所有模型的架構說明表格
+      - 最終 TEST Set 結果表格（含 mAP50、mAP50-95、Precision、Recall、FPS）
+      - 訓練過程 Best VAL mAP50 表格
+      - 關鍵發現與分析（6條）
+      - 每個模型的 best.pt 存放路徑
+
+2. README.md
+   快速參考用，包含：
+      - 結果總表（精簡版）
+      - 最佳模型路徑
+      - 如何跑訓練/推論的指令
+
+
+================================================================
+  結果數字
+================================================================
+
+logs/score/ 資料夾下有 10 個 log 檔，每個對應一個模型的 inference 結果
+  - b1.log / b2.log / b8.log      → C3TR-lite 不同 block 數
+  - paper.log                      → C3TR-paper（論文指定層）
+  - cbam.log / ca.log / eca.log    → 單一 attention 模組
+  - c3tr_cbam.log                  → C3TR-lite + CBAM 組合
+  - c3tr_cbam_ft.log               → C3TR-lite + CBAM fine-tune 版
+  - c3tr_eca.log                   → C3TR-paper + ECA-paper 組合
+
+每個 log 的 EVALUATION SUMMARY 區塊包含 VAL 和 TEST 的完整數字
+
+Baseline 結果由外部提供（messageImage_1780298999104.jpg），已整合至 EXPERIMENT_NOTES.md
+  VAL mAP50=0.8668 / TEST mAP50=0.8521 / FPS=439
+
+
+================================================================
+  結論
+================================================================
+
+最佳模型：
+  TEST mAP50 第一 → C3TR-lite (b=1)，best.pt 在
+                    runs/detect/runs/furnas_b1-3/weights/best.pt
+  VAL  mAP50 第一 → C3TR-lite (b=2)，best.pt 在
+                    runs/detect/runs/furnas_b2-2/weights/best.pt
+
+主要發現：
+  1. C3TR-lite 換 1-2 層效果最好，比所有 attention 模組都好
+  2. 換太多層（8層）反而變差
+  3. 組合方法（C3TR + CBAM / C3TR + ECA）無法超越純 C3TR-lite
+  4. ECA 在此資料集效果最差
+  5. 論文方法（C3TR-paper）居中，排第3
+
+完整數字表格請見 EXPERIMENT_NOTES.md 的「TEST Set 整體指標」章節
+
+
+================================================================
+  訓練 log（如需圖）
+================================================================
+
+logs/furnas/ 資料夾下有每個模型的 epoch-by-epoch log
+  格式：[時間] epoch X/600  loss=X  lr=X  mAP50=X  mAP50-95=X
+  可用來畫訓練曲線圖
+
+
+================================================================
+  資料集說明
+================================================================
+
+Furnas Dataset v0.07
+  來源：https://github.com/freds0/PTL-AI_Furnas_Dataset
+  論文：PTL-AI Furnas Dataset: A Public Dataset for Fault Detection
+        in Power Transmission Lines Using Aerial Images（SIBGRAPI 2022）
+  內容：電力線無人機巡檢影像，11 類零件（insulators, balisers 等）
+  分割：train 4,812張 / val 849張 / test 628張
+
+================================================================
