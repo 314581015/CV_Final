@@ -1,0 +1,41 @@
+# YOLOv10s + CBAM at P3 and P4 neck
+nc: 11  # Furnas electrical equipment classes
+scales:
+  s: [0.33, 0.50, 1024]
+
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]]               # 0  P1/2
+  - [-1, 1, Conv, [128, 3, 2]]              # 1  P2/4
+  - [-1, 3, C2f, [128, True]]               # 2
+  - [-1, 1, Conv, [256, 3, 2]]              # 3  P3/8
+  - [-1, 6, C2f, [256, True]]               # 4  <- Backbone P3
+  - [-1, 1, SCDown, [512, 3, 2]]            # 5  P4/16
+  - [-1, 6, C2f, [512, True]]               # 6  <- Backbone P4
+  - [-1, 1, SCDown, [1024, 3, 2]]           # 7  P5/32
+  - [-1, 3, C2fCIB, [1024, True, True]]     # 8
+  - [-1, 1, SPPF, [1024, 5]]                # 9
+  - [-1, 1, PSA, [1024]]                    # 10
+
+head:
+  # --- Top-down path ---
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  # 11  upsample P5
+  - [[-1, 6], 1, Concat, [1]]                   # 12  cat backbone P4
+  - [-1, 3, C2f, [512]]                         # 13  P4 fusion features
+  - [-1, 1, CBAM, [256]]                        # 14  <-- CBAM 1 (P4)
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  # 15  upsample P4
+  - [[-1, 4], 1, Concat, [1]]                   # 16  cat backbone P3
+  - [-1, 3, C2f, [256]]                         # 17  P3 fusion features
+  - [-1, 1, CBAM, [128]]                        # 18  <-- CBAM 2 (P3)
+
+  # --- Bottom-up path ---
+  - [-1, 1, Conv, [256, 3, 2]]                  # 19  downsample P3
+  - [[-1, 14], 1, Concat, [1]]                  # 20  cat CBAM 1 output (P4)
+  - [-1, 3, C2f, [512]]                         # 21  P4 detection features
+
+  - [-1, 1, SCDown, [512, 3, 2]]                # 22  downsample P4
+  - [[-1, 10], 1, Concat, [1]]                  # 23  cat backbone P5
+  - [-1, 3, C2fCIB, [1024, True, True]]         # 24  P5 detection features
+
+  - [[18, 21, 24], 1, v10Detect, [nc]]          # 25  Detect(P3, P4, P5)
