@@ -1,0 +1,24 @@
+# Furnas Dataset v0.07 — Power line component inspection
+# Source: https://drive.google.com/file/d/1JfVxRV6C0vwLTBhW-C97fwj4gawraGHe
+# After downloading, run:
+#   python datasets/convert_furnas.py --src /path/to/furnas_dataset_v0.07 --dst datasets/Furnas
+# Then set `path` below to the output directory.
+
+path: /workplace/pcchu/final_project/datasets/Furnas
+train: images/train
+val:   images/val
+test:  images/test
+
+nc: 11
+names:
+  0: baliser_ok
+  1: baliser_aok
+  2: baliser_nok
+  3: insulator_ok
+  4: insulator_nok
+  5: bird_nest
+  6: stockbridge_ok
+  7: stockbridge_nok
+  8: spacer_ok
+  9: spacer_nok
+  10: insulator_unk
